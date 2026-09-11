@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual Environment
+venv/
+.venv/
+
+# Secrets
+credentials.json
+token.json
+*.env
+.env
+
+# Test Reports
+reports/
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+
+# IDE
+.vscode/
+
+# OS
+Thumbs.db
+.DS_Store
