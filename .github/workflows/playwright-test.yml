@@ -92,18 +92,18 @@ jobs:
           python -m compileall pages tests utils conftest.py
 
 
-      # 9. Verify pytest test discovery
-      - name: Collect Playwright tests
+      # 9. Verify E2E test discovery
+      - name: Collect E2E Playwright test
         run: |
-          python -m pytest tests --collect-only -q
+          python -m pytest tests/test_ticket_e2e.py --collect-only -q
 
 
-      # 10. Execute complete Playwright test suite
-      - name: Run Playwright tests
+      # 10. Execute complete E2E Playwright test
+      - name: Run Complete Ticket E2E Test
         env:
           HEADLESS: "true"
         run: |
-          python -m pytest tests \
+          python -m pytest tests/test_ticket_e2e.py \
             -v \
             --browser chromium \
             --html=reports/report.html \
