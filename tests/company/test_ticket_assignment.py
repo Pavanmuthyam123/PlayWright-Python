@@ -3,6 +3,11 @@ from playwright.sync_api import Page, expect
 from pages.company_ticket_page import CompanyTicketPage
 
 
+# ================================================================
+# EXISTING TEST
+# COMPANY TICKET REASSIGNMENT
+# ================================================================
+
 def test_company_reassign_ticket_to_john(page: Page):
     """
     Company-side Ticket Reassignment Test.
@@ -30,20 +35,16 @@ def test_company_reassign_ticket_to_john(page: Page):
     # TEST DATA
     # ============================================================
 
-    # Existing ticket used for the current business scenario.
     ticket_number = "TCS-000014"
 
-    # Ticket description.
     ticket_description = "SSD Issue"
 
-    # Current assigned agent.
     current_agent = "Agent-Kim"
 
-    # New assigned agent.
     new_agent = "John-Agent"
 
     # ============================================================
-    # 1. Open Company Login Page
+    # 1. OPEN COMPANY LOGIN PAGE
     # ============================================================
 
     page.goto(
@@ -51,7 +52,7 @@ def test_company_reassign_ticket_to_john(page: Page):
     )
 
     # ============================================================
-    # 2. Verify Login Page
+    # 2. VERIFY LOGIN PAGE
     # ============================================================
 
     expect(
@@ -64,7 +65,7 @@ def test_company_reassign_ticket_to_john(page: Page):
     )
 
     # ============================================================
-    # 3. Enter Company Email
+    # 3. ENTER COMPANY EMAIL
     # ============================================================
 
     page.locator(
@@ -74,7 +75,7 @@ def test_company_reassign_ticket_to_john(page: Page):
     )
 
     # ============================================================
-    # 4. Enter Company Password
+    # 4. ENTER COMPANY PASSWORD
     # ============================================================
 
     page.locator(
@@ -84,7 +85,7 @@ def test_company_reassign_ticket_to_john(page: Page):
     )
 
     # ============================================================
-    # 5. Sign In
+    # 5. SIGN IN
     # ============================================================
 
     page.get_by_role(
@@ -94,7 +95,7 @@ def test_company_reassign_ticket_to_john(page: Page):
     ).click()
 
     # ============================================================
-    # 6. Verify Company Dashboard
+    # 6. VERIFY COMPANY DASHBOARD
     # ============================================================
 
     expect(
@@ -118,7 +119,7 @@ def test_company_reassign_ticket_to_john(page: Page):
     )
 
     # ============================================================
-    # 7. Initialize Company Ticket Page Object
+    # 7. INITIALIZE COMPANY TICKET PAGE OBJECT
     # ============================================================
 
     company_ticket_page = CompanyTicketPage(
@@ -126,7 +127,7 @@ def test_company_reassign_ticket_to_john(page: Page):
     )
 
     # ============================================================
-    # 8. Open Tickets
+    # 8. OPEN TICKETS
     # ============================================================
 
     company_ticket_page.open_tickets()
@@ -136,7 +137,7 @@ def test_company_reassign_ticket_to_john(page: Page):
     )
 
     # ============================================================
-    # 9. Open Existing Ticket
+    # 9. OPEN EXISTING TICKET
     # ============================================================
 
     company_ticket_page.open_ticket(
@@ -148,14 +149,9 @@ def test_company_reassign_ticket_to_john(page: Page):
     )
 
     # ============================================================
-    # 10. Verify Ticket Number
+    # 10. VERIFY TICKET NUMBER
     # ============================================================
 
-    # IMPORTANT:
-    # TCS-000014 is normal text on the page,
-    # NOT a heading.
-    # Use .first to avoid strict mode violation
-    # (multiple elements match).
     expect(
         page.get_by_text(
             ticket_number,
@@ -166,10 +162,9 @@ def test_company_reassign_ticket_to_john(page: Page):
     )
 
     # ============================================================
-    # 11. Verify Ticket Title
+    # 11. VERIFY TICKET TITLE
     # ============================================================
 
-    # "SSD Issue" is the actual H1 heading.
     expect(
         page.get_by_role(
             "heading",
@@ -185,10 +180,9 @@ def test_company_reassign_ticket_to_john(page: Page):
     )
 
     # ============================================================
-    # 12. Verify Current Assigned Agent
+    # 12. VERIFY CURRENT ASSIGNED AGENT
     # ============================================================
 
-    # Use .first to avoid strict mode if multiple matches
     expect(
         page.get_by_text(
             current_agent,
@@ -203,7 +197,7 @@ def test_company_reassign_ticket_to_john(page: Page):
     )
 
     # ============================================================
-    # 14. Reassign Ticket to John-Agent
+    # 13. REASSIGN TICKET TO JOHN-AGENT
     # ============================================================
 
     company_ticket_page.reassign_ticket_to_john()
@@ -213,7 +207,7 @@ def test_company_reassign_ticket_to_john(page: Page):
     )
 
     # ============================================================
-    # 15. Verify New Assigned Agent
+    # 14. VERIFY NEW ASSIGNED AGENT
     # ============================================================
 
     company_ticket_page.verify_john_agent_assigned()
@@ -223,7 +217,7 @@ def test_company_reassign_ticket_to_john(page: Page):
     )
 
     # ============================================================
-    # 16. Logout
+    # 15. LOGOUT
     # ============================================================
 
     company_ticket_page.logout()
@@ -250,6 +244,199 @@ def test_company_reassign_ticket_to_john(page: Page):
 
     print(
         f"To     : {new_agent}"
+    )
+
+    print(
+        "=============================================="
+    )
+
+
+# ================================================================
+# NEW TEST
+# COMPANY FRESH TICKET ASSIGNMENT
+# ================================================================
+
+def test_company_assign_new_ticket_to_john(
+    company_login
+):
+    """
+    Company-side Fresh Ticket Assignment Test.
+
+    Business Scenario:
+
+        TCS-000015
+            ↓
+        Status = Open
+            ↓
+        Assigned To = Unassigned
+            ↓
+        Click Assign Agent
+            ↓
+        Choose John-Agent
+            ↓
+        Click Assign Ticket
+            ↓
+        Verify John-Agent
+    """
+
+    # ============================================================
+    # TEST DATA
+    # ============================================================
+
+    ticket_number = "TCS-000015"
+
+    ticket_description = "SSD Issue"
+
+    new_agent = "John-Agent"
+
+    # ============================================================
+    # 1. COMPANY LOGIN
+    # ============================================================
+    #
+    # Reusable company_login fixture handles:
+    #
+    # Login page
+    # Email
+    # Password
+    # Sign In
+    # Dashboard verification
+    #
+    # ============================================================
+
+    page = company_login
+
+    print(
+        "\nCompany dashboard verified through fixture."
+    )
+
+    # ============================================================
+    # 2. CREATE COMPANY TICKET PAGE OBJECT
+    # ============================================================
+
+    company_ticket_page = CompanyTicketPage(
+        page
+    )
+
+    # ============================================================
+    # 3. OPEN TICKETS
+    # ============================================================
+
+    company_ticket_page.open_tickets()
+
+    print(
+        "\nCompany Tickets page opened."
+    )
+
+    # ============================================================
+    # 4. OPEN FRESH TICKET
+    # ============================================================
+
+    company_ticket_page.open_ticket(
+        ticket_number
+    )
+
+    print(
+        f"\nOpened fresh ticket: {ticket_number}"
+    )
+
+    # ============================================================
+    # 5. VERIFY TICKET NUMBER
+    # ============================================================
+
+    expect(
+        page.get_by_text(
+            ticket_number,
+            exact=False
+        ).first
+    ).to_be_visible(
+        timeout=10000
+    )
+
+    print(
+        f"Ticket number verified: {ticket_number}"
+    )
+
+    # ============================================================
+    # 6. VERIFY TICKET DESCRIPTION
+    # ============================================================
+
+    expect(
+        page.get_by_role(
+            "heading",
+            name=ticket_description,
+            exact=True
+        )
+    ).to_be_visible(
+        timeout=10000
+    )
+
+    print(
+        f"Ticket description verified: {ticket_description}"
+    )
+
+    # ============================================================
+    # 7. VERIFY TICKET IS CURRENTLY UNASSIGNED
+    # ============================================================
+
+    expect(
+        page.get_by_text(
+            "Unassigned",
+            exact=True
+        )
+    ).to_be_visible(
+        timeout=10000
+    )
+
+    print(
+        "Current assignment verified: Unassigned"
+    )
+
+    # ============================================================
+    # 8. ASSIGN FRESH TICKET TO JOHN-AGENT
+    # ============================================================
+
+    company_ticket_page.assign_new_ticket_to_john()
+
+    print(
+        f"\nFresh ticket assigned to {new_agent}."
+    )
+
+    # ============================================================
+    # 9. VERIFY JOHN-AGENT ASSIGNMENT
+    # ============================================================
+
+    company_ticket_page.verify_john_agent_assigned()
+
+    print(
+        f"New assigned agent verified: {new_agent}"
+    )
+
+    # ============================================================
+    # FINAL RESULT
+    # ============================================================
+
+    print(
+        "\n=============================================="
+    )
+
+    print(
+        "FRESH TICKET ASSIGNMENT PASSED"
+    )
+
+    print(
+        f"Ticket : {ticket_number}"
+    )
+
+    print(
+        "Status : Open"
+    )
+
+    print(
+        f"Assigned To : {new_agent}"
+    )
+
+    print(
+        "Result : PASS"
     )
 
     print(

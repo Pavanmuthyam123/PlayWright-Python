@@ -134,6 +134,240 @@ def company_login(page):
 
 
 # ================================================================
+# REUSABLE AGENT LOGIN FIXTURE
+# ================================================================
+
+@pytest.fixture
+def agent_login(page):
+    """
+    Reusable Agent Login fixture.
+
+    Any test that needs Agent Login can use:
+
+        def test_example(agent_login):
+            page = agent_login
+
+    This avoids repeating Agent Login code
+    in every Agent test.
+    """
+
+    # ------------------------------------------------------------
+    # Agent Login Details
+    # ------------------------------------------------------------
+
+    agent_email = "johnagent@gmail.com"
+    agent_password = "1234567"
+
+    login_url = "https://www.ticksupport.com/tcs/login"
+
+    agent_dashboard_url = (
+        "https://www.ticksupport.com/tcs/agent/dashboard"
+    )
+
+    # ------------------------------------------------------------
+    # 1. Open Login Page
+    # ------------------------------------------------------------
+
+    page.goto(
+        login_url
+    )
+
+    # ------------------------------------------------------------
+    # 2. Verify Login Page
+    # ------------------------------------------------------------
+
+    page.get_by_role(
+        "heading",
+        name="WELCOME BACK"
+    ).wait_for(
+        state="visible",
+        timeout=10000
+    )
+
+    # ------------------------------------------------------------
+    # 3. Enter Agent Email
+    # ------------------------------------------------------------
+
+    page.locator(
+        'input[type="email"]'
+    ).fill(
+        agent_email
+    )
+
+    # ------------------------------------------------------------
+    # 4. Enter Agent Password
+    # ------------------------------------------------------------
+
+    page.locator(
+        'input[type="password"]'
+    ).fill(
+        agent_password
+    )
+
+    # ------------------------------------------------------------
+    # 5. Click Sign In
+    # ------------------------------------------------------------
+
+    page.get_by_role(
+        "button",
+        name="Sign In",
+        exact=True
+    ).click()
+
+    # ------------------------------------------------------------
+    # 6. Verify Agent Dashboard
+    # ------------------------------------------------------------
+
+    page.wait_for_url(
+        agent_dashboard_url,
+        timeout=10000
+    )
+
+    page.get_by_text(
+        "John-Agent",
+        exact=False
+    ).first.wait_for(
+        state="visible",
+        timeout=10000
+    )
+
+    # ------------------------------------------------------------
+    # 7. Print Login Information
+    # ------------------------------------------------------------
+
+    print()
+    print("==============================================")
+    print("AGENT LOGIN SUCCESSFUL")
+    print("==============================================")
+    print(f"Dashboard: {page.url}")
+    print("Agent: John-Agent")
+    print("==============================================")
+
+    # ------------------------------------------------------------
+    # 8. Return Playwright Page
+    # ------------------------------------------------------------
+
+    return page
+
+
+# ================================================================
+# REUSABLE CUSTOMER LOGIN FIXTURE
+# ================================================================
+
+@pytest.fixture
+def customer_login(page):
+    """
+    Reusable Customer Login fixture.
+
+    Any test that needs Customer Login can use:
+
+        def test_example(customer_login):
+            page = customer_login
+
+    This avoids repeating Customer Login code
+    in every Customer test.
+    """
+
+    # ------------------------------------------------------------
+    # Customer Login Details
+    # ------------------------------------------------------------
+
+    customer_email = "muthyampavanraj333@gmail.com"
+    customer_password = "1234567"
+
+    login_url = "https://www.ticksupport.com/tcs/login"
+
+    customer_dashboard_url = (
+        "https://www.ticksupport.com/tcs/my/dashboard"
+    )
+
+    # ------------------------------------------------------------
+    # 1. Open Login Page
+    # ------------------------------------------------------------
+
+    page.goto(
+        login_url
+    )
+
+    # ------------------------------------------------------------
+    # 2. Verify Login Page
+    # ------------------------------------------------------------
+
+    page.get_by_role(
+        "heading",
+        name="WELCOME BACK"
+    ).wait_for(
+        state="visible",
+        timeout=10000
+    )
+
+    # ------------------------------------------------------------
+    # 3. Enter Customer Email
+    # ------------------------------------------------------------
+
+    page.locator(
+        'input[type="email"]'
+    ).fill(
+        customer_email
+    )
+
+    # ------------------------------------------------------------
+    # 4. Enter Customer Password
+    # ------------------------------------------------------------
+
+    page.locator(
+        'input[type="password"]'
+    ).fill(
+        customer_password
+    )
+
+    # ------------------------------------------------------------
+    # 5. Click Sign In
+    # ------------------------------------------------------------
+
+    page.get_by_role(
+        "button",
+        name="Sign In",
+        exact=True
+    ).click()
+
+    # ------------------------------------------------------------
+    # 6. Verify Customer Dashboard
+    # ------------------------------------------------------------
+
+    page.wait_for_url(
+        customer_dashboard_url,
+        timeout=10000
+    )
+
+    page.get_by_text(
+        "Welcome to Tcs support portal",
+        exact=True
+    ).wait_for(
+        state="visible",
+        timeout=10000
+    )
+
+    # ------------------------------------------------------------
+    # 7. Print Login Information
+    # ------------------------------------------------------------
+
+    print()
+    print("==============================================")
+    print("CUSTOMER LOGIN SUCCESSFUL")
+    print("==============================================")
+    print(f"Dashboard: {page.url}")
+    print("Customer: Muthyam Pavan")
+    print("==============================================")
+
+    # ------------------------------------------------------------
+    # 8. Return Playwright Page
+    # ------------------------------------------------------------
+
+    return page
+
+
+# ================================================================
 # FAILURE SCREENSHOT + HTML REPORT
 # ================================================================
 

@@ -2,7 +2,7 @@ import time
 
 from playwright.sync_api import Page, expect
 
-from utils.gmail_otp import get_latest_reset_code
+from utils.gmail_otp import get_reset_code
 
 
 def test_customer_forgot_password(page: Page):
@@ -39,7 +39,7 @@ def test_customer_forgot_password(page: Page):
     ).click()
 
     # 6. Get NEW reset code from Gmail
-    reset_code = get_latest_reset_code(
+    reset_code = get_reset_code(
         after_timestamp=request_time
     )
 
