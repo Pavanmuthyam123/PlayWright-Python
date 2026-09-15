@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - "feature/**"
 
   pull_request:
     branches:
@@ -11,38 +12,75 @@ on:
 
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: playwright-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  playwright-tests:
+    name: Run Playwright Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-      # Get the latest project code
+
+      # 1. Get source code from GitHub
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Install Python
+      # 2. Install Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: "pip"
 
-      # Install project dependencies
-      - name: Install dependencies
+      # 3. Install project dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Install Playwright Chromium
-      - name: Install Playwright
+      # 4. Install Chromium for Playwright
+      - name: Install Playwright Chromium
         run: |
           python -m playwright install --with-deps chromium
 
-      # Check Python files for syntax errors
+      # 5. Create report folders
+      - name: Create report directories
+        run: |
+          mkdir -p reports/screenshots
+
+      # 6. Check Python syntax before running tests
       - name: Check Python syntax
         run: |
           python -m compileall pages tests utils conftest.py
 
-      # Verify that pytest can discover our tests
+      # 7. Verify pytest can discover the tests
       - name: Collect Playwright tests
         run: |
           python -m pytest tests --collect-only
+
+      # 8. Run Playwright tests and generate HTML report
+      - name: Run Playwright tests
+        run: |
+          python -m pytest tests \
+            --browser chromium \
+            -v \
+            --html=reports/report.html \
+            --self-contained-html
+
+      # 9. Upload HTML report and screenshots
+      - name: Upload Playwright reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_number }}
+          path: |
+            reports/report.html
+            reports/screenshots/
+          if-no-files-found: warn
+          retention-days: 14
