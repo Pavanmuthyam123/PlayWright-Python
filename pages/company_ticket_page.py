@@ -5,25 +5,16 @@ class CompanyTicketPage:
     """
     Page Object Model for Company-side Ticket Management.
 
-    This Page Object supports two ticket assignment scenarios:
+    Supports:
 
-    1. Existing Assigned Ticket
-       Agent-Kim
-           ↓
-       Reassign
-           ↓
-       John-Agent
-
-    2. Fresh Unassigned Ticket
-       Unassigned
-           ↓
-       Assign Agent
-           ↓
-       John-Agent
+    1. Verify Unassigned Ticket
+    2. Assign Fresh Ticket to an Agent
+    3. Reassign Existing Ticket to another Agent
+    4. Verify Assigned Agent
+    5. Logout
     """
 
     def __init__(self, page: Page):
-
         self.page = page
 
         # ============================================================
@@ -37,7 +28,7 @@ class CompanyTicketPage:
         )
 
         # ============================================================
-        # EXISTING TICKET REASSIGNMENT LOCATOR
+        # TICKET ASSIGNMENT LOCATORS
         # ============================================================
 
         self.reassign_button = page.get_by_role(
@@ -45,10 +36,6 @@ class CompanyTicketPage:
             name="Reassign",
             exact=True
         )
-
-        # ============================================================
-        # FRESH TICKET ASSIGNMENT LOCATOR
-        # ============================================================
 
         self.assign_agent_button = page.get_by_role(
             "button",
@@ -68,11 +55,6 @@ class CompanyTicketPage:
         self.choose_agent_button = page.get_by_role(
             "button",
             name="Choose an agent",
-            exact=True
-        )
-
-        self.john_agent_option = page.get_by_text(
-            "John-Agent",
             exact=True
         )
 
@@ -117,9 +99,7 @@ class CompanyTicketPage:
             timeout=30000
         )
 
-        print(
-            "Company Tickets page opened."
-        )
+        print("Company Tickets page opened.")
 
     # ================================================================
     # OPEN SPECIFIC TICKET
@@ -157,6 +137,167 @@ class CompanyTicketPage:
         )
 
     # ================================================================
+    # VERIFY UNASSIGNED
+    # ================================================================
+
+    def verify_unassigned(self) -> None:
+        """
+        Verify that the ticket is currently Unassigned.
+
+        This is used for a freshly created customer ticket
+        before assigning an agent.
+        """
+
+        assigned_to_label = self.page.get_by_text(
+            "Assigned To",
+            exact=True
+        )
+
+        expect(
+            assigned_to_label
+        ).to_be_visible(
+            timeout=10000
+        )
+
+        assigned_to_row = assigned_to_label.locator(
+            "xpath=.."
+        )
+
+        expect(
+            assigned_to_row.get_by_text(
+                "Unassigned",
+                exact=True
+            )
+        ).to_be_visible(
+            timeout=10000
+        )
+
+        print(
+            "Ticket assignment verified: Unassigned."
+        )
+
+    # ================================================================
+    # GENERIC ASSIGN TICKET TO AGENT
+    # ================================================================
+
+    def assign_ticket_to_agent(
+        self,
+        agent_name: str
+    ) -> None:
+        """
+        Assign the current ticket to the specified agent.
+
+        Example:
+            assign_ticket_to_agent("Agent-Kim")
+            assign_ticket_to_agent("John-Agent")
+        """
+
+        # ------------------------------------------------------------
+        # 1. Verify Assign Agent button
+        # ------------------------------------------------------------
+
+        expect(
+            self.assign_agent_button
+        ).to_be_visible(
+            timeout=10000
+        )
+
+        print(
+            f"\nAssign Agent button found for {agent_name}."
+        )
+
+        # ------------------------------------------------------------
+        # 2. Click Assign Agent
+        # ------------------------------------------------------------
+
+        self.assign_agent_button.click()
+
+        print(
+            "Assign Agent button clicked."
+        )
+
+        # ------------------------------------------------------------
+        # 3. Verify Assignment Modal
+        # ------------------------------------------------------------
+
+        expect(
+            self.assign_modal_heading
+        ).to_be_visible(
+            timeout=10000
+        )
+
+        print(
+            "Assign Ticket to Agent modal opened."
+        )
+
+        # ------------------------------------------------------------
+        # 4. Open Agent Dropdown
+        # ------------------------------------------------------------
+
+        expect(
+            self.choose_agent_button
+        ).to_be_visible(
+            timeout=5000
+        )
+
+        self.choose_agent_button.click()
+
+        print(
+            "Agent dropdown opened."
+        )
+
+        # ------------------------------------------------------------
+        # 5. Select Required Agent
+        # ------------------------------------------------------------
+
+        agent_option = self.page.get_by_text(
+            agent_name,
+            exact=True
+        )
+
+        expect(
+            agent_option
+        ).to_be_visible(
+            timeout=5000
+        )
+
+        agent_option.click()
+
+        print(
+            f"{agent_name} selected."
+        )
+
+        # ------------------------------------------------------------
+        # 6. Click Assign Ticket
+        # ------------------------------------------------------------
+
+        expect(
+            self.assign_ticket_button
+        ).to_be_visible(
+            timeout=5000
+        )
+
+        self.assign_ticket_button.click()
+
+        print(
+            "Assign Ticket clicked."
+        )
+
+        # ------------------------------------------------------------
+        # 7. Wait for Modal to Close
+        # ------------------------------------------------------------
+
+        expect(
+            self.assign_modal_heading
+        ).to_be_hidden(
+            timeout=10000
+        )
+
+        print(
+            f"Ticket assigned to {agent_name}."
+        )
+
+    # ================================================================
     # REASSIGN EXISTING TICKET TO JOHN-AGENT
     # ================================================================
 
@@ -164,18 +305,6 @@ class CompanyTicketPage:
         """
         Reassign an already assigned ticket
         from another agent to John-Agent.
-
-        Example:
-
-            Agent-Kim
-                ↓
-            Reassign
-                ↓
-            Choose an agent
-                ↓
-            John-Agent
-                ↓
-            Assign Ticket
         """
 
         # ------------------------------------------------------------
@@ -236,13 +365,18 @@ class CompanyTicketPage:
         # 5. Select John-Agent
         # ------------------------------------------------------------
 
+        john_agent_option = self.page.get_by_text(
+            "John-Agent",
+            exact=True
+        )
+
         expect(
-            self.john_agent_option
+            john_agent_option
         ).to_be_visible(
             timeout=5000
         )
 
-        self.john_agent_option.click()
+        john_agent_option.click()
 
         print(
             "John-Agent selected."
@@ -285,22 +419,6 @@ class CompanyTicketPage:
     def assign_new_ticket_to_john(self) -> None:
         """
         Assign a fresh/unassigned ticket directly to John-Agent.
-
-        Business Flow:
-
-            Unassigned Ticket
-                    ↓
-              Assign Agent
-                    ↓
-            Assignment Modal
-                    ↓
-             Choose an agent
-                    ↓
-               John-Agent
-                    ↓
-             Assign Ticket
-                    ↓
-             Modal Closed
         """
 
         # ------------------------------------------------------------
@@ -361,13 +479,18 @@ class CompanyTicketPage:
         # 5. Select John-Agent
         # ------------------------------------------------------------
 
+        john_agent_option = self.page.get_by_text(
+            "John-Agent",
+            exact=True
+        )
+
         expect(
-            self.john_agent_option
+            john_agent_option
         ).to_be_visible(
             timeout=5000
         )
 
-        self.john_agent_option.click()
+        john_agent_option.click()
 
         print(
             "John-Agent selected."
@@ -426,6 +549,37 @@ class CompanyTicketPage:
 
         print(
             "John-Agent assignment verified."
+        )
+
+    # ================================================================
+    # VERIFY SPECIFIC AGENT ASSIGNED
+    # ================================================================
+
+    def verify_agent_assigned(
+        self,
+        agent_name: str
+    ) -> None:
+        """
+        Verify that a specific agent is assigned to the ticket.
+
+        Example:
+            verify_agent_assigned("Agent-Kim")
+            verify_agent_assigned("John-Agent")
+        """
+
+        agent = self.page.get_by_text(
+            agent_name,
+            exact=True
+        ).last
+
+        expect(
+            agent
+        ).to_be_visible(
+            timeout=10000
+        )
+
+        print(
+            f"{agent_name} assignment verified."
         )
 
     # ================================================================

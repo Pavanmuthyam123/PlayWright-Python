@@ -8,7 +8,9 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 
-SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+SCOPES = [
+    "https://www.googleapis.com/auth/gmail.readonly"
+]
 
 
 # ============================================================
@@ -17,7 +19,7 @@ SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
 def get_gmail_service():
     """
-    Create Gmail API service.
+    Create Gmail API service using token.json.
     """
 
     base_dir = os.path.dirname(
@@ -30,6 +32,11 @@ def get_gmail_service():
         base_dir,
         "token.json"
     )
+
+    if not os.path.exists(token_path):
+        raise FileNotFoundError(
+            f"Gmail token file not found: {token_path}"
+        )
 
     creds = Credentials.from_authorized_user_file(
         token_path,
@@ -55,7 +62,7 @@ def execute_with_retry(
     retries=3
 ):
     """
-    Execute Gmail API request with retry.
+    Execute Gmail API request with retry support.
     """
 
     for attempt in range(
@@ -101,7 +108,7 @@ def execute_with_retry(
 
 def decode_body(data):
     """
-    Decode Gmail Base64URL encoded body.
+    Decode Gmail Base64URL encoded email body.
     """
 
     if not data:
@@ -134,6 +141,11 @@ def decode_body(data):
 def get_email_body(message):
     """
     Extract email body from Gmail message.
+
+    Supports:
+    - Normal email
+    - Multipart email
+    - Nested multipart email
     """
 
     payload = message.get(
@@ -142,7 +154,7 @@ def get_email_body(message):
     )
 
     # --------------------------------------------------------
-    # Normal email
+    # Normal email body
     # --------------------------------------------------------
 
     body_data = (
@@ -158,46 +170,54 @@ def get_email_body(message):
         )
 
     # --------------------------------------------------------
-    # Multipart email
+    # Recursive multipart body
     # --------------------------------------------------------
+
+    def extract_from_parts(parts):
+
+        for part in parts:
+
+            part_body = (
+                part
+                .get("body", {})
+                .get("data")
+            )
+
+            if part_body:
+
+                decoded = decode_body(
+                    part_body
+                )
+
+                if decoded:
+                    return decoded
+
+            nested_parts = part.get(
+                "parts",
+                []
+            )
+
+            if nested_parts:
+
+                nested_result = extract_from_parts(
+                    nested_parts
+                )
+
+                if nested_result:
+                    return nested_result
+
+        return ""
 
     parts = payload.get(
         "parts",
         []
     )
 
-    for part in parts:
+    if parts:
 
-        part_body = (
-            part
-            .get("body", {})
-            .get("data")
+        return extract_from_parts(
+            parts
         )
-
-        if part_body:
-
-            return decode_body(
-                part_body
-            )
-
-        nested_parts = part.get(
-            "parts",
-            []
-        )
-
-        for nested in nested_parts:
-
-            nested_body = (
-                nested
-                .get("body", {})
-                .get("data")
-            )
-
-            if nested_body:
-
-                return decode_body(
-                    nested_body
-                )
 
     return ""
 
@@ -262,14 +282,14 @@ def get_full_message(
 
 
 # ============================================================
-# FIND OTP
+# FIND OTP IN EMAIL
 # ============================================================
 
 def find_otp_in_message(
     message
 ):
     """
-    Extract 6-digit OTP from email body.
+    Extract a 6-digit OTP from email body.
     """
 
     body = get_email_body(
@@ -277,7 +297,6 @@ def find_otp_in_message(
     )
 
     if not body:
-
         return None
 
     match = re.search(
@@ -286,7 +305,6 @@ def find_otp_in_message(
     )
 
     if match:
-
         return match.group()
 
     return None
@@ -299,16 +317,25 @@ def find_otp_in_message(
 def get_code_for_email(
     subject,
     email,
-    timeout=45
+    timeout=45,
+    after_timestamp=None
 ):
     """
     Find OTP using:
-        - exact email recipient
-        - exact email subject
-        - latest matching email
 
-    This is used by the E2E test because every run
-    creates a unique Gmail plus-address.
+    - Exact recipient email
+    - Exact subject
+    - Latest matching email
+    - Optional after_timestamp filter
+
+    after_timestamp:
+        Gmail internalDate in milliseconds.
+
+        If provided, emails received before or at this
+        timestamp are ignored.
+
+    This is important for password reset because Gmail
+    may contain an old valid-looking OTP.
     """
 
     print()
@@ -323,6 +350,12 @@ def get_code_for_email(
     print(
         f"Subject : {subject}"
     )
+
+    if after_timestamp is not None:
+
+        print(
+            f"After   : {after_timestamp}"
+        )
 
     print("=" * 70)
 
@@ -393,6 +426,23 @@ def get_code_for_email(
                             )
                         )
 
+                        # ----------------------------------------
+                        # IMPORTANT:
+                        # Ignore old OTP emails
+                        # ----------------------------------------
+
+                        if (
+                            after_timestamp is not None
+                            and internal_date <= after_timestamp
+                        ):
+
+                            print(
+                                "Ignoring old email: "
+                                f"{internal_date}"
+                            )
+
+                            continue
+
                         email_data.append(
                             (
                                 internal_date,
@@ -417,7 +467,7 @@ def get_code_for_email(
                 )
 
                 # --------------------------------------------
-                # Take newest matching email
+                # Find OTP
                 # --------------------------------------------
 
                 for internal_date, message in email_data:
@@ -435,7 +485,7 @@ def get_code_for_email(
 
                         print()
                         print(
-                            f"OTP FOUND: {code}"
+                            f"FRESH OTP FOUND: {code}"
                         )
                         print()
 
@@ -448,14 +498,14 @@ def get_code_for_email(
             )
 
         print(
-            "OTP not available yet. "
+            "Fresh OTP not available yet. "
             "Checking again..."
         )
 
         time.sleep(2)
 
     raise Exception(
-        f"'{subject}' email for "
+        f"Fresh '{subject}' email for "
         f"'{email}' was not found within "
         f"{timeout} seconds."
     )
@@ -467,16 +517,20 @@ def get_code_for_email(
 
 def get_registration_otp(
     email,
-    timeout=45
+    timeout=45,
+    after_timestamp=None
 ):
     """
-    Get registration OTP for the exact test email.
+    Get registration OTP for exact test email.
+
+    Existing tests can continue using this function.
     """
 
     return get_code_for_email(
         subject="Registration Verification Code",
         email=email,
-        timeout=timeout
+        timeout=timeout,
+        after_timestamp=after_timestamp
     )
 
 
@@ -486,16 +540,22 @@ def get_registration_otp(
 
 def get_reset_code(
     email,
-    timeout=45
+    timeout=45,
+    after_timestamp=None
 ):
     """
-    Get password reset OTP for the exact test email.
+    Get fresh password reset OTP for exact test email.
+
+    IMPORTANT:
+    after_timestamp prevents an old reset OTP from being
+    selected.
     """
 
     return get_code_for_email(
         subject="Password Reset Verification Code",
         email=email,
-        timeout=timeout
+        timeout=timeout,
+        after_timestamp=after_timestamp
     )
 
 
@@ -504,14 +564,15 @@ def get_reset_code(
 # ============================================================
 
 def get_latest_otp(
-    timeout=45
+    timeout=45,
+    after_timestamp=None
 ):
     """
-    Old registration OTP function.
-    Kept so existing standalone tests do not break.
+    Legacy registration OTP function.
 
-    This searches by subject only and takes the newest
-    matching registration email.
+    Kept so existing registration tests do not break.
+
+    Searches registration emails by subject only.
     """
 
     print()
@@ -545,6 +606,11 @@ def get_latest_otp(
                 []
             )
 
+            print(
+                f"Registration emails found: "
+                f"{len(messages)}"
+            )
+
             email_data = []
 
             for msg in messages:
@@ -561,6 +627,23 @@ def get_latest_otp(
                             0
                         )
                     )
+
+                    # ----------------------------------------
+                    # Ignore old registration emails if
+                    # after_timestamp is supplied
+                    # ----------------------------------------
+
+                    if (
+                        after_timestamp is not None
+                        and internal_date <= after_timestamp
+                    ):
+
+                        print(
+                            "Ignoring old registration email: "
+                            f"{internal_date}"
+                        )
+
+                        continue
 
                     email_data.append(
                         (
