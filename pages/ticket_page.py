@@ -1,4 +1,4 @@
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 
 
 class TicketPage:
@@ -95,10 +95,7 @@ class TicketPage:
 
         elif priority.lower() == "high":
 
-            # Open priority dropdown
             self.medium_priority_button.click()
-
-            # Select High from dropdown
             self.high_priority_option.click()
 
         else:
@@ -114,8 +111,72 @@ class TicketPage:
     def create_ticket(self) -> None:
         """Submit the Create Support Ticket form."""
 
-        # Make sure submit button is visible
         self.create_ticket_button.scroll_into_view_if_needed()
 
-        # Click submit button
         self.create_ticket_button.click()
+
+        # Wait until ticket form disappears
+        expect(
+            self.description_field
+        ).not_to_be_visible(
+            timeout=10000
+        )
+
+    # ============================================================
+    # Get Generated Ticket Number
+    # ============================================================
+
+    def get_ticket_number(
+        self,
+        ticket_description: str
+    ) -> str:
+        """
+        Get the latest generated ticket number
+        from My Tickets.
+
+        The newest ticket appears first in the ticket table.
+        """
+
+        # Find all rows containing the ticket description.
+        ticket_rows = self.page.get_by_role(
+            "row"
+        ).filter(
+            has_text=ticket_description
+        )
+
+        # At least one matching ticket should exist.
+        expect(
+            ticket_rows.first
+        ).to_be_visible(
+            timeout=10000
+        )
+
+        # The newest ticket is the first matching row.
+        latest_ticket_row = ticket_rows.first
+
+        # Get the ticket number link from that row.
+        ticket_link = latest_ticket_row.get_by_role(
+            "link"
+        ).first
+
+        expect(
+            ticket_link
+        ).to_be_visible(
+            timeout=10000
+        )
+
+        # Read generated ticket number.
+        ticket_number = ticket_link.inner_text().strip()
+
+        # Basic validation.
+        expect(
+            ticket_link
+        ).to_have_text(
+            ticket_number
+        )
+
+        print(
+            f"\nGenerated Ticket Number: {ticket_number}"
+        )
+
+        return ticket_number

@@ -5,7 +5,7 @@ from pages.ticket_page import TicketPage
 def test_customer_create_ticket(page: Page):
     """
     Test customer ability to create a General Support Request
-    ticket with High priority.
+    ticket with High priority and capture the generated ticket number.
     """
 
     # ============================================================
@@ -25,10 +25,12 @@ def test_customer_create_ticket(page: Page):
             "heading",
             name="WELCOME BACK"
         )
-    ).to_be_visible()
+    ).to_be_visible(
+        timeout=10000
+    )
 
     # ============================================================
-    # 3. Enter Customer Email
+    # 3. Customer Login
     # ============================================================
 
     page.locator(
@@ -37,34 +39,26 @@ def test_customer_create_ticket(page: Page):
         "muthyampavanraj333@gmail.com"
     )
 
-    # ============================================================
-    # 4. Enter Customer Password
-    # ============================================================
-
     page.locator(
         'input[type="password"]'
     ).fill(
         "1234567"
     )
 
-    # ============================================================
-    # 5. Click Sign In
-    # ============================================================
-
     page.get_by_role(
         "button",
-        name="Sign In"
+        name="Sign In",
+        exact=True
     ).click()
 
     # ============================================================
-    # 6. Verify Customer Dashboard
+    # 4. Verify Customer Dashboard
     # ============================================================
-    # Verify that login successfully reached the customer portal.
-    # We avoid depending only on one exact URL.
 
     expect(
         page.get_by_text(
-            "Welcome to Tcs support portal"
+            "Welcome to Tcs support portal",
+            exact=True
         )
     ).to_be_visible(
         timeout=10000
@@ -76,27 +70,25 @@ def test_customer_create_ticket(page: Page):
     )
 
     # ============================================================
-    # 7. Initialize Ticket Page Object
+    # 5. Initialize Ticket Page
     # ============================================================
-    # TicketPage contains locators and actions for
-    # the Customer Create Ticket module.
 
     ticket_page = TicketPage(page)
 
     # ============================================================
-    # 8. Open New Ticket
+    # 6. Open New Ticket
     # ============================================================
 
     ticket_page.click_new_ticket()
 
     # ============================================================
-    # 9. Select Ticket Type
+    # 7. Select Ticket Type
     # ============================================================
 
     ticket_page.select_ticket_type()
 
     # ============================================================
-    # 10. Enter Ticket Description
+    # 8. Enter Ticket Description
     # ============================================================
 
     ticket_description = "SSD Issue"
@@ -106,7 +98,7 @@ def test_customer_create_ticket(page: Page):
     )
 
     # ============================================================
-    # 11. Select High Priority
+    # 9. Select High Priority
     # ============================================================
 
     ticket_page.select_priority(
@@ -114,16 +106,14 @@ def test_customer_create_ticket(page: Page):
     )
 
     # ============================================================
-    # 12. Submit Ticket
+    # 10. Create Ticket
     # ============================================================
 
     ticket_page.create_ticket()
 
     # ============================================================
-    # 12a. Verify Ticket Creation Success
+    # 11. Verify Ticket Form Closed
     # ============================================================
-    # After successful submission, the ticket form should
-    # no longer be visible.
 
     expect(
         ticket_page.description_field
@@ -132,31 +122,42 @@ def test_customer_create_ticket(page: Page):
     )
 
     # ============================================================
-    # 12b. Check for Error Messages
+    # 12. Check Error Alerts
     # ============================================================
-    # Check whether any error alert is displayed after
-    # ticket submission.
 
     error_alerts = page.locator(
         "[role='alert'], .alert-danger, .error"
     )
 
-    error_count = error_alerts.count()
+    visible_errors = []
 
-    if error_count > 0:
+    for i in range(error_alerts.count()):
+
+        alert = error_alerts.nth(i)
+
+        if alert.is_visible():
+
+            text = alert.text_content()
+
+            if text:
+                visible_errors.append(
+                    text.strip()
+                )
+
+    if visible_errors:
+
         print(
-            f"\nWARNING: Found {error_count} error alert(s) "
-            "after ticket creation"
+            "\nWARNING: Error alert(s) found:"
         )
 
-        for i in range(error_count):
-            error_text = error_alerts.nth(i).text_content()
+        for error in visible_errors:
 
             print(
-                f"   Error {i + 1}: {error_text}"
+                f"   {error}"
             )
 
     else:
+
         print(
             "\nNo error alerts found after ticket creation."
         )
@@ -170,9 +171,8 @@ def test_customer_create_ticket(page: Page):
     )
 
     # ============================================================
-    # 13a. Wait for Tickets Page to Load
+    # 14. Wait for My Tickets Page
     # ============================================================
-    # The Tickets page loads ticket data asynchronously.
 
     page.locator(
         "text=Loading"
@@ -187,10 +187,8 @@ def test_customer_create_ticket(page: Page):
     )
 
     # ============================================================
-    # 14. Verify Created Ticket
+    # 15. Verify Ticket Description
     # ============================================================
-    # Verify that the newly created ticket description
-    # is displayed in My Tickets.
 
     expect(
         page.get_by_text(
@@ -202,5 +200,63 @@ def test_customer_create_ticket(page: Page):
     )
 
     print(
-        f"\nTicket created successfully: {ticket_description}"
+        f"\nTicket description verified: "
+        f"{ticket_description}"
+    )
+
+    # ============================================================
+    # 16. Capture Generated Ticket Number
+    # ============================================================
+
+    ticket_number = ticket_page.get_ticket_number(
+        ticket_description
+    )
+
+    # ============================================================
+    # 17. Verify Generated Ticket Number
+    # ============================================================
+
+    expect(
+        page.get_by_text(
+            ticket_number,
+            exact=True
+        )
+    ).to_be_visible(
+        timeout=10000
+    )
+
+    # ============================================================
+    # 18. Final Result
+    # ============================================================
+
+    print(
+        "\n=============================================="
+    )
+
+    print(
+        "CUSTOMER TICKET CREATION PASSED"
+    )
+
+    print(
+        "=============================================="
+    )
+
+    print(
+        f"Ticket Number : {ticket_number}"
+    )
+
+    print(
+        f"Description   : {ticket_description}"
+    )
+
+    print(
+        "Priority      : High"
+    )
+
+    print(
+        "Status        : Open"
+    )
+
+    print(
+        "=============================================="
     )

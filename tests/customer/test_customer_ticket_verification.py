@@ -7,7 +7,7 @@ from pages.customer_ticket_verification_page import (
 # TEST DATA
 # ================================================================
 
-TICKET_NUMBER = "TCS-000015"
+TICKET_NUMBER = "TCS-000018"
 
 TICKET_DESCRIPTION = "SSD Issue"
 

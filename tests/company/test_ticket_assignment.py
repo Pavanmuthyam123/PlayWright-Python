@@ -283,7 +283,7 @@ def test_company_assign_new_ticket_to_john(
     # TEST DATA
     # ============================================================
 
-    ticket_number = "TCS-000015"
+    ticket_number = "TCS-000018"
 
     ticket_description = "SSD Issue"
 
