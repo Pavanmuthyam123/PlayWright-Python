@@ -289,7 +289,7 @@ def test_complete_ticket_e2e(page: Page):
         ticket_number
     )
 
-    # Verify ticket
+    # Verify ticket number
     expect(
         page.get_by_text(
             ticket_number,
@@ -297,6 +297,7 @@ def test_complete_ticket_e2e(page: Page):
         ).first
     ).to_be_visible(timeout=10000)
 
+    # Verify ticket description
     expect(
         page.get_by_text(
             TICKET_DESCRIPTION,
@@ -304,13 +305,33 @@ def test_complete_ticket_e2e(page: Page):
         ).first
     ).to_be_visible(timeout=10000)
 
-    # Fresh ticket should be unassigned
+    # ------------------------------------------------------------
+    # Verify fresh ticket is currently unassigned
+    # ------------------------------------------------------------
+
+    assigned_to_label = page.get_by_text(
+        "Assigned To",
+        exact=True
+    )
+
     expect(
-        page.get_by_text(
+        assigned_to_label
+    ).to_be_visible(timeout=10000)
+
+    assigned_to_row = assigned_to_label.locator(
+        "xpath=.."
+    )
+
+    expect(
+        assigned_to_row.get_by_text(
             "Unassigned",
             exact=True
         )
     ).to_be_visible(timeout=10000)
+
+    print(
+        f"\n{ticket_number} is currently Unassigned."
+    )
 
     # Assign to John-Agent
     company_ticket_page.assign_new_ticket_to_john()
@@ -349,6 +370,7 @@ def test_complete_ticket_e2e(page: Page):
         ticket_number
     )
 
+    # Verify ticket details
     staff_ticket_page.verify_ticket_details(
         ticket_number=ticket_number,
         ticket_description=TICKET_DESCRIPTION
@@ -359,7 +381,7 @@ def test_complete_ticket_e2e(page: Page):
         reason=RESOLUTION_REASON
     )
 
-    # Verify resolved
+    # Verify resolved status
     staff_ticket_page.verify_resolved_status()
 
     print(
@@ -395,11 +417,13 @@ def test_complete_ticket_e2e(page: Page):
         ticket_number
     )
 
+    # Verify ticket
     customer_ticket_page.verify_ticket(
         ticket_number=ticket_number,
         ticket_description=TICKET_DESCRIPTION
     )
 
+    # Verify resolved status
     customer_ticket_page.verify_resolved_status()
 
     # Open rating
@@ -410,10 +434,12 @@ def test_complete_ticket_e2e(page: Page):
         CUSTOMER_RATING
     )
 
+    # Enter feedback
     customer_ticket_page.enter_feedback(
         CUSTOMER_FEEDBACK
     )
 
+    # Submit rating
     customer_ticket_page.submit_rating()
 
     print(

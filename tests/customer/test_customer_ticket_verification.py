@@ -1,139 +1,184 @@
+from playwright.sync_api import expect
+
 from pages.customer_ticket_verification_page import (
     CustomerTicketVerificationPage
 )
 
 
-# ================================================================
-# TEST DATA
-# ================================================================
+TICKET_NUMBER = "TCS-000038"
+TICKET_DESCRIPTION = "Fresh Assignment Test 1789484663"
 
-TICKET_NUMBER = "TCS-000018"
+RATING = 5
 
-TICKET_DESCRIPTION = "SSD Issue"
-
-EXPECTED_STATUS = "resolved"
-
-CUSTOMER_RATING = 5
-
-CUSTOMER_FEEDBACK = (
+FEEDBACK = (
     "Thanks for John-Agent. "
     "The ticket was resolved successfully."
 )
 
 
-# ================================================================
-# CUSTOMER TICKET VERIFICATION TEST
-# ================================================================
-
-def test_customer_verify_resolved_ticket(
-    customer_login
-):
+def test_customer_verify_resolved_ticket(customer_login):
     """
-    Positive End-to-End Test Case:
+    Customer Ticket Verification.
 
-    Customer logs in,
-    opens My Tickets,
-    opens the resolved ticket,
-    verifies ticket details,
-    verifies resolved status,
-    rates the support,
-    enters feedback,
-    and submits the rating.
-
-    Expected Result:
-
-    Customer should successfully verify the resolved
-    ticket and submit a support rating.
+    Existing Ticket
+        ↓
+    Customer My Tickets
+        ↓
+    Open TCS-000038
+        ↓
+    Verify Ticket Details
+        ↓
+    Verify Status = Resolved
+        ↓
+    Rate 5/5
+        ↓
+    Enter Feedback
+        ↓
+    Submit Rating
+        ↓
+    Logout
     """
-
-    # ============================================================
-    # CUSTOMER LOGIN
-    # ============================================================
-    #
-    # Login is handled by the reusable
-    # customer_login fixture from conftest.py.
-    #
-    # ============================================================
 
     page = customer_login
 
-    print()
     print(
-        "Customer dashboard verified through fixture."
+        "\n=============================================="
+    )
+    print(
+        "CUSTOMER TICKET VERIFICATION"
+    )
+    print(
+        "=============================================="
     )
 
-    # ============================================================
-    # CREATE CUSTOMER PAGE OBJECT
-    # ============================================================
+    # ------------------------------------------------------------
+    # 1. CUSTOMER LOGIN
+    # ------------------------------------------------------------
+
+    expect(
+        page
+    ).to_have_url(
+        "https://www.ticksupport.com/tcs/my/dashboard",
+        timeout=10000
+    )
+
+    print(
+        "\nCustomer login successful."
+    )
+
+    # ------------------------------------------------------------
+    # 2. CUSTOMER TICKET PAGE
+    # ------------------------------------------------------------
 
     customer_ticket_page = (
         CustomerTicketVerificationPage(page)
     )
 
-    # ============================================================
-    # OPEN MY TICKETS
-    # ============================================================
-
     customer_ticket_page.open_my_tickets()
 
-    # ============================================================
-    # OPEN REQUIRED TICKET
-    # ============================================================
+    print(
+        "Customer My Tickets page opened."
+    )
+
+    # ------------------------------------------------------------
+    # 3. OPEN SAME TICKET
+    # ------------------------------------------------------------
 
     customer_ticket_page.open_ticket(
         TICKET_NUMBER
     )
 
-    # ============================================================
-    # VERIFY TICKET DETAILS
-    # ============================================================
-
-    customer_ticket_page.verify_ticket(
-        ticket_number=TICKET_NUMBER,
-        ticket_description=TICKET_DESCRIPTION
+    print(
+        f"Customer ticket opened: {TICKET_NUMBER}"
     )
 
-    # ============================================================
-    # VERIFY RESOLVED STATUS
-    # ============================================================
+    # ------------------------------------------------------------
+    # 4. VERIFY TICKET DETAILS
+    # ------------------------------------------------------------
+
+    customer_ticket_page.verify_ticket(
+        TICKET_NUMBER,
+        TICKET_DESCRIPTION
+    )
+
+    print(
+        f"Ticket verified: {TICKET_NUMBER}"
+    )
+
+    print(
+        f"Description verified: {TICKET_DESCRIPTION}"
+    )
+
+    # ------------------------------------------------------------
+    # 5. VERIFY RESOLVED STATUS
+    # ------------------------------------------------------------
 
     customer_ticket_page.verify_resolved_status()
 
-    # ============================================================
-    # OPEN RATE SUPPORT
-    # ============================================================
+    print(
+        "Customer verified ticket status: Resolved"
+    )
+
+    # ------------------------------------------------------------
+    # 6. OPEN RATE SUPPORT
+    # ------------------------------------------------------------
 
     customer_ticket_page.open_rate_support()
 
-    # ============================================================
-    # SELECT 5 STAR RATING
-    # ============================================================
+    print(
+        "Rate Support opened."
+    )
+
+    # ------------------------------------------------------------
+    # 7. SELECT RATING
+    # ------------------------------------------------------------
 
     customer_ticket_page.select_rating(
-        CUSTOMER_RATING
+        RATING
     )
 
-    # ============================================================
-    # ENTER CUSTOMER FEEDBACK
-    # ============================================================
+    print(
+        f"Customer rating selected: {RATING}/5"
+    )
+
+    # ------------------------------------------------------------
+    # 8. ENTER FEEDBACK
+    # ------------------------------------------------------------
 
     customer_ticket_page.enter_feedback(
-        CUSTOMER_FEEDBACK
+        FEEDBACK
     )
 
-    # ============================================================
-    # SUBMIT RATING
-    # ============================================================
+    print(
+        f"Customer feedback entered: {FEEDBACK}"
+    )
+
+    # ------------------------------------------------------------
+    # 9. SUBMIT RATING
+    # ------------------------------------------------------------
 
     customer_ticket_page.submit_rating()
 
-    # ============================================================
-    # FINAL RESULT
-    # ============================================================
-
-    print()
     print(
-        "=============================================="
+        "Customer rating submitted."
+    )
+
+    # ------------------------------------------------------------
+    # 10. LOGOUT
+    # ------------------------------------------------------------
+
+    customer_ticket_page.logout()
+
+    print(
+        "Customer logout verified."
+    )
+
+    # ------------------------------------------------------------
+    # FINAL RESULT
+    # ------------------------------------------------------------
+
+    print(
+        "\n=============================================="
     )
     print(
         "CUSTOMER TICKET VERIFICATION PASSED"
@@ -148,13 +193,13 @@ def test_customer_verify_resolved_ticket(
         f"Description : {TICKET_DESCRIPTION}"
     )
     print(
-        f"Status      : {EXPECTED_STATUS.title()}"
+        "Status      : Resolved"
     )
     print(
-        f"Rating      : {CUSTOMER_RATING}/5"
+        f"Rating      : {RATING}/5"
     )
     print(
-        f"Feedback    : {CUSTOMER_FEEDBACK}"
+        f"Feedback    : {FEEDBACK}"
     )
     print(
         "Result      : PASS"
