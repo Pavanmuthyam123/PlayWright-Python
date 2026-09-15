@@ -411,10 +411,17 @@ def pytest_runtest_makereport(item, call):
                 f"{item.name}-failure.png"
             )
 
-            page.screenshot(
-                path=screenshot_path,
-                full_page=True
-            )
+            try:
+                page.screenshot(
+                    path=screenshot_path,
+                    full_page=True,
+                    timeout=10000
+                )
+            except Exception as screenshot_error:
+                print(
+                    f"\nScreenshot capture failed: {screenshot_error}"
+                )
+                screenshot_path = None
 
             # ====================================================
             # 3. Get pytest-html Plugin
@@ -428,6 +435,7 @@ def pytest_runtest_makereport(item, call):
 
             if (
                 pytest_html
+                and screenshot_path
                 and os.path.exists(screenshot_path)
             ):
 
