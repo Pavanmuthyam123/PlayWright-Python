@@ -3,7 +3,7 @@ from playwright.sync_api import Page, expect
 
 class TicketPage:
     """Page Object Model for Customer Ticket creation."""
-
+    # Handles customer ticket creation actions.
     def __init__(self, page: Page):
         self.page = page
 
