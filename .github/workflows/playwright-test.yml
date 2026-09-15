@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - "feature/**"
 
   pull_request:
     branches:
@@ -12,31 +11,37 @@ on:
 
   workflow_dispatch:
 
+  schedule:
+    - cron: "30 20 * * *"
+
 permissions:
   contents: read
 
 concurrency:
-  group: playwright-${{ github.workflow }}-${{ github.ref }}
+  group: playwright-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  playwright-tests:
-    name: Run Playwright Tests
+  run-playwright-tests:
+
     runs-on: ubuntu-latest
+
     timeout-minutes: 30
 
     steps:
 
-      # 1. Get source code from GitHub
+      # 1. Checkout source code
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      # 2. Install Python
+
+      # 2. Setup Python
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          python-version: "3.12"
           cache: "pip"
+
 
       # 3. Install project dependencies
       - name: Install Python dependencies
@@ -44,36 +49,68 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 4. Install Chromium for Playwright
+
+      # 4. Install Playwright Chromium
       - name: Install Playwright Chromium
         run: |
           python -m playwright install --with-deps chromium
 
-      # 5. Create report folders
+
+      # 5. Create Gmail authentication files from GitHub Secrets
+      - name: Configure Gmail authentication
+        shell: bash
+        env:
+          GMAIL_CREDENTIALS_JSON: ${{ secrets.GMAIL_CREDENTIALS_JSON }}
+          GMAIL_TOKEN_JSON: ${{ secrets.GMAIL_TOKEN_JSON }}
+        run: |
+          printf '%s' "$GMAIL_CREDENTIALS_JSON" > credentials.json
+          printf '%s' "$GMAIL_TOKEN_JSON" > token.json
+
+          echo "Gmail authentication files created."
+
+
+      # 6. Verify Gmail authentication files exist
+      - name: Verify Gmail authentication setup
+        shell: bash
+        run: |
+          test -f credentials.json
+          test -f token.json
+
+          echo "credentials.json exists"
+          echo "token.json exists"
+
+
+      # 7. Create report directories
       - name: Create report directories
         run: |
           mkdir -p reports/screenshots
 
-      # 6. Check Python syntax before running tests
+
+      # 8. Check Python syntax
       - name: Check Python syntax
         run: |
           python -m compileall pages tests utils conftest.py
 
-      # 7. Verify pytest can discover the tests
+
+      # 9. Verify pytest test discovery
       - name: Collect Playwright tests
         run: |
-          python -m pytest tests --collect-only
+          python -m pytest tests --collect-only -q
 
-      # 8. Run Playwright tests and generate HTML report
+
+      # 10. Execute complete Playwright test suite
       - name: Run Playwright tests
+        env:
+          HEADLESS: "true"
         run: |
           python -m pytest tests \
-            --browser chromium \
             -v \
+            --browser chromium \
             --html=reports/report.html \
             --self-contained-html
 
-      # 9. Upload HTML report and screenshots
+
+      # 11. Upload HTML report and screenshots
       - name: Upload Playwright reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -84,3 +121,14 @@ jobs:
             reports/screenshots/
           if-no-files-found: warn
           retention-days: 14
+
+
+      # 12. Remove sensitive Gmail files
+      - name: Cleanup Gmail authentication files
+        if: always()
+        shell: bash
+        run: |
+          rm -f credentials.json
+          rm -f token.json
+
+          echo "Sensitive Gmail files removed."
