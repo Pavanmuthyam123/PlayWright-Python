@@ -106,7 +106,14 @@ def company_login(page: Page) -> None:
 def agent_login(page: Page) -> None:
     """Login as support agent."""
 
-    page.goto(f"{BASE_URL}/tcs/login")
+    # After company logout, CI may already be on the login page.
+    # Avoid unnecessary second navigation to the same page.
+    if not page.url.endswith("/tcs/login"):
+        page.goto(
+            f"{BASE_URL}/tcs/login",
+            wait_until="domcontentloaded",
+            timeout=30000
+        )
 
     expect(
         page.get_by_role(
